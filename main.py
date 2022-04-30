@@ -27,12 +27,25 @@ def on_message(client, userdata, message):
     print(dir(message))
     date_now = datetime.now()
     time_formatted = date_now.strftime("%A %B %d, %Y, %H:%M:%S")
-    has_been_send = IOT.iot_send_message(data['client_id'], data['temperature'], data["humidity"], data["pressure"], callback=iot_callback)
     insert_into_db(data)
+    IOT.iot_send_message(data['client_id'], data['temperature'], data["humidity"], data["pressure"], callback=iot_callback)
+    
 
 def loop():
-    print("ayo its working boyy")
-    time.sleep(60)
+    global LAST_ID
+    while True:
+        # send previously unsend datapoints
+        con = sqlite3.connect('databasepi')
+        cur = con.cursor()
+        sql_statement = """SELECT ID, device_id, temperature, humidity, pressure, rpi_datetime FROM data WHERE has_been_send=0;"""
+        has_not_been_send = cur.execute(sql_statement)
+        data = has_not_been_send.fetchall()
+        for measurement in data:
+            print(measurement)
+            LAST_ID, device_id, temperature, humidity, pressure, rpi_datetime = measurement
+            IOT.iot_send_message(device_id=device_id, temperature=temperature, humidity=humidity, pressure=pressure, date_created=rpi_datetime, callback=iot_callback)
+            time.sleep(0.5)
+        time.sleep(60)
     
 
 def insert_into_db(data):
@@ -43,17 +56,31 @@ def insert_into_db(data):
 
     date_now = datetime.now()
     time_formatted = date_now.strftime("%A %B %d, %Y, %H:%M:%S")
-    sql_statement = "INSERT INTO data (device_id, temperature, humidity, pressure, rpi_datetime, sensor_datetime, has_been_send) VALUES ('{}', {}, {}, {}, '{}', '{}', {});".format(str(data["client_id"].strip("b").strip("'")), data["temperature"], data["humidity"], data["pressure"], time_formatted, data["timestamp"], 0)
+    data["client_id"] = str(data["client_id"]).strip("b").strip("'")
+    sql_statement = "INSERT INTO data (device_id, temperature, humidity, pressure, rpi_datetime, sensor_datetime, has_been_send) VALUES ('{}', {}, {}, {}, '{}', '{}', {});".format(data["client_id"], data["temperature"], data["humidity"], data["pressure"], time_formatted, data["timestamp"], 0)
     print(sql_statement)
     cur.execute(sql_statement)
     LAST_ID = cur.lastrowid
     con.commit()
     con.close()
 
+def check_latest_value():
+    sql_statement = "SELECT COUNT(ID) FROM data;"
+    con = sqlite3.connect('databasepi')
+    cur = con.cursor()
+    count = cur.execute(sql_statement).fetchone()
+    count = count[0]
+    if count > 200:
+        amount = count - 200
+        sql_statement = "DELETE FROM data ORDER BY ID ASC LIMIT %d;" % amount
+        cur.execute(sql_statement)
+        con.commit()
+    con.close()
+
 def create_table():
     con = sqlite3.connect('databasepi')
     cur = con.cursor()
-    sql_statement = """CREATE TABLE "data2" (
+    sql_statement = """CREATE TABLE "data" (
 	"ID"	INTEGER NOT NULL UNIQUE,
 	"device_id"	TEXT,
 	"pressure"	REAL,
