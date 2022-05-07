@@ -202,7 +202,7 @@ def iot_init():
     except:
         pass
 
-def iot_send_message(device_id="PI", temperature=-127, humidity=-1, pressure=-1, date_created=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), callback=send_confirmation_callback):
+def iot_send_message(device_id="PI", temperature=-127, humidity=-1, pressure=-1, date_created=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), callback=send_confirmation_callback, ID=0):
     try:
         global MESSAGE_COUNT
         # msg_txt_formatted = MSG_TXT % (
@@ -220,8 +220,7 @@ def iot_send_message(device_id="PI", temperature=-127, humidity=-1, pressure=-1,
         msg_txt_formatted = json.dumps(data)
         print(msg_txt_formatted)
         message = IoTHubMessage(msg_txt_formatted)
-        message.message_id = "message_%d" % MESSAGE_COUNT
-        MESSAGE_COUNT += 1
+        message.message_id = str(ID)
         client.send_event_async(message, callback, MESSAGE_COUNT)
         status = client.get_send_status()
         print ( "Send status: %s" % status )
