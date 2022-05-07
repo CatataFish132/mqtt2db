@@ -17,7 +17,7 @@ def iot_callback(*args, **kwargs):
     '''this function gets called when we get a callback from the IOT hub. if it received the message it updates the row in the database that the data has been received'''
 
     ID = args[0].message_id
-    con = sqlite3.connect('databasepi')
+    con = sqlite3.connect(cf["DATABASE"]["path"])
     cur = con.cursor()
     if str(args[1]) == "OK":
         sql_statement = """UPDATE data
@@ -42,7 +42,7 @@ def resend(sc):
     '''this function runs in a loop and resends messages that havent been received by the IOT hub'''
 
     # send previously unsend datapoints
-    con = sqlite3.connect('databasepi')
+    con = sqlite3.connect(cf["DATABASE"]["path"])
     cur = con.cursor()
     sql_statement = """SELECT ID, device_id, temperature, humidity, pressure, rpi_datetime FROM data WHERE has_been_send=0;"""
     has_not_been_send = cur.execute(sql_statement)
@@ -60,7 +60,8 @@ def resend(sc):
 def insert_into_db(data):
     '''Inserts the data in the database'''
 
-    con = sqlite3.connect('databasepi')
+    # con = sqlite3.connect('databasepi')
+    con = sqlite3.connect(cf["DATABASE"]["path"])
     cur = con.cursor()
 
     # get datetime
@@ -82,7 +83,7 @@ def check_latest_value():
     '''delete the latest rows if the database holds more than 200 received rows'''
 
     sql_statement = "SELECT COUNT(ID) FROM data WHERE has_been_send=1;"
-    con = sqlite3.connect('databasepi')
+    con = sqlite3.connect(cf["DATABASE"]["path"])
     cur = con.cursor()
     count = cur.execute(sql_statement).fetchone()
     count = count[0]
@@ -97,7 +98,7 @@ def check_latest_value():
 def create_table():
     '''Creates the table in the database'''
 
-    con = sqlite3.connect('databasepi')
+    con = sqlite3.connect(cf["DATABASE"]["path"])
     cur = con.cursor()
     sql_statement = """CREATE TABLE "data" (
 	"ID"	INTEGER NOT NULL UNIQUE,
