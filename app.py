@@ -17,6 +17,7 @@ from telemetry import Telemetry
 import datetime
 import sqlite3
 import json
+import configparser
 
 # HTTP options
 # Because it can poll "after 9 seconds" polls will happen effectively
@@ -73,7 +74,10 @@ def is_correct_connection_string():
     else:
         return False
 
-CONNECTION_STRING = "HostName=ThimoAwesomeIOTHub.azure-devices.net;DeviceId=Pi;SharedAccessKey=2neDeNwPVpkQlVe92KtLzG62EoBVUTU6GWNv4xd8lHo="
+cf = configparser.ConfigParser()
+cf.read("config.ini")
+
+CONNECTION_STRING = str(cf["IOTHUB"]["connectionstring"])
 
 if not is_correct_connection_string():
     print ( "Device connection string is not correct." )
