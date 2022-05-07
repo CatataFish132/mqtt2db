@@ -51,8 +51,6 @@ EVENT_SUCCESS = "success"
 EVENT_FAILED = "failed"
 MESSAGE_COUNT = 0
 
-con = sqlite3.connect("databaseiot")
-cur = con.cursor()
 
 # chose HTTP, AMQP or MQTT as transport protocol
 PROTOCOL = IoTHubTransportProvider.MQTT
